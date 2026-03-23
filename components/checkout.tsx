@@ -284,16 +284,17 @@ export function Checkout({
           </CardContent>
         </Card>
 
-        {/* Mock Card Form */}
+        {/* Mock Card Form - Only required for card payment */}
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <CreditCard className="w-5 h-5 text-primary" />
               <h2 className="font-semibold text-foreground">Card Details</h2>
+              <span className="text-xs text-muted-foreground ml-auto">(Only for card payment)</span>
             </div>
             
             <p className="text-xs text-muted-foreground mb-4 bg-secondary/50 p-2 rounded-lg">
-              Demo mode: Enter any card details to simulate payment
+              Skip this section if you prefer to pay cash at the counter
             </p>
 
             <div className="space-y-4">
