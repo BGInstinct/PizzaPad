@@ -35,6 +35,7 @@ export function Checkout({
   onBack,
   onSuccess 
 }: CheckoutProps) {
+  const [step, setStep] = useState<"select" | "card-details" | "complete">("select")
   const [isProcessing, setIsProcessing] = useState(false)
   const [isProcessingCash, setIsProcessingCash] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
@@ -238,22 +239,33 @@ export function Checkout({
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={onBack}
+            onClick={() => {
+              if (step === "card-details") {
+                setStep("select")
+                setError(null)
+              } else {
+                onBack()
+              }
+            }}
             className="text-muted-foreground"
             disabled={isProcessing}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Payment</h1>
-            <p className="text-xs text-muted-foreground">Secure checkout</p>
+            <h1 className="text-lg font-semibold text-foreground">
+              {step === "card-details" ? "Card Details" : "Payment"}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {step === "card-details" ? "Enter your card information" : "Choose payment method"}
+            </p>
           </div>
           <Lock className="w-4 h-4 text-muted-foreground ml-auto" />
         </div>
       </header>
 
       <div className="flex-1 p-4 pb-32 overflow-y-auto">
-        {/* Order Summary */}
+        {/* Order Summary - Always visible */}
         <Card className="bg-card border-border mb-4">
           <CardContent className="p-4">
             <h2 className="font-semibold text-foreground mb-3">Order Summary</h2>
@@ -284,115 +296,147 @@ export function Checkout({
           </CardContent>
         </Card>
 
-        {/* Mock Card Form - Only required for card payment */}
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <CreditCard className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold text-foreground">Card Details</h2>
-              <span className="text-xs text-muted-foreground ml-auto">(Only for card payment)</span>
-            </div>
-            
-            <p className="text-xs text-muted-foreground mb-4 bg-secondary/50 p-2 rounded-lg">
-              Skip this section if you prefer to pay cash at the counter
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-muted-foreground mb-1 block">Card Number</label>
-                <Input
-                  placeholder="4242 4242 4242 4242"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                  className="bg-input border-border text-foreground h-12 rounded-xl"
-                  disabled={isProcessing}
-                />
+        {/* Step 1: Payment Method Selection */}
+        {step === "select" && (
+          <Card className="bg-card border-border">
+            <CardContent className="p-4">
+              <h2 className="font-semibold text-foreground mb-4">Choose Payment Method</h2>
+              <div className="space-y-3">
+                <button
+                  onClick={() => setStep("card-details")}
+                  className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary hover:bg-secondary/50 transition-colors text-left"
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">Pay with Card</p>
+                    <p className="text-sm text-muted-foreground">Credit or debit card</p>
+                  </div>
+                  <ArrowLeft className="w-5 h-5 text-muted-foreground rotate-180" />
+                </button>
+                
+                <button
+                  onClick={handleCashPayment}
+                  disabled={isProcessingCash}
+                  className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary hover:bg-secondary/50 transition-colors text-left disabled:opacity-50"
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Banknote className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">Pay Cash at Counter</p>
+                    <p className="text-sm text-muted-foreground">Pay when you collect your order</p>
+                  </div>
+                  {isProcessingCash ? (
+                    <Spinner className="w-5 h-5" />
+                  ) : (
+                    <ArrowLeft className="w-5 h-5 text-muted-foreground rotate-180" />
+                  )}
+                </button>
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              {error && (
+                <p className="text-destructive text-sm mt-3">{error}</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 2: Card Details Form */}
+        {step === "card-details" && (
+          <Card className="bg-card border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <CreditCard className="w-5 h-5 text-primary" />
+                <h2 className="font-semibold text-foreground">Card Details</h2>
+              </div>
+              
+              <p className="text-xs text-muted-foreground mb-4 bg-secondary/50 p-2 rounded-lg">
+                Demo mode: Enter any card details to simulate payment
+              </p>
+
+              <div className="space-y-4">
                 <div>
-                  <label className="text-sm text-muted-foreground mb-1 block">Expiry</label>
+                  <label className="text-sm text-muted-foreground mb-1 block">Card Number</label>
                   <Input
-                    placeholder="MM/YY"
-                    value={expiry}
-                    onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                    maxLength={5}
+                    placeholder="4242 4242 4242 4242"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
                     className="bg-input border-border text-foreground h-12 rounded-xl"
                     disabled={isProcessing}
                   />
                 </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-1 block">Expiry</label>
+                    <Input
+                      placeholder="MM/YY"
+                      value={expiry}
+                      onChange={(e) => setExpiry(formatExpiry(e.target.value))}
+                      maxLength={5}
+                      className="bg-input border-border text-foreground h-12 rounded-xl"
+                      disabled={isProcessing}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-1 block">CVC</label>
+                    <Input
+                      placeholder="123"
+                      value={cvc}
+                      onChange={(e) => setCvc(e.target.value.replace(/\D/g, "").substring(0, 4))}
+                      maxLength={4}
+                      className="bg-input border-border text-foreground h-12 rounded-xl"
+                      disabled={isProcessing}
+                    />
+                  </div>
+                </div>
+                
                 <div>
-                  <label className="text-sm text-muted-foreground mb-1 block">CVC</label>
+                  <label className="text-sm text-muted-foreground mb-1 block">Cardholder Name</label>
                   <Input
-                    placeholder="123"
-                    value={cvc}
-                    onChange={(e) => setCvc(e.target.value.replace(/\D/g, "").substring(0, 4))}
-                    maxLength={4}
+                    placeholder="John Doe"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     className="bg-input border-border text-foreground h-12 rounded-xl"
                     disabled={isProcessing}
                   />
                 </div>
               </div>
-              
-              <div>
-                <label className="text-sm text-muted-foreground mb-1 block">Cardholder Name</label>
-                <Input
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="bg-input border-border text-foreground h-12 rounded-xl"
-                  disabled={isProcessing}
-                />
-              </div>
-            </div>
 
-            {error && (
-              <p className="text-destructive text-sm mt-3">{error}</p>
-            )}
-          </CardContent>
-        </Card>
+              {error && (
+                <p className="text-destructive text-sm mt-3">{error}</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Sticky Pay Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4">
-        <div className="max-w-md mx-auto space-y-3">
-          <Button
-            onClick={handlePayment}
-            disabled={isProcessing || isProcessingCash}
-            className="w-full h-14 text-lg font-semibold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            {isProcessing ? (
-              <span className="flex items-center gap-2">
-                <Spinner className="w-5 h-5" />
-                Processing...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                Pay Card {total.toFixed(2)} €
-              </span>
-            )}
-          </Button>
-          <Button
-            onClick={handleCashPayment}
-            disabled={isProcessing || isProcessingCash}
-            variant="outline"
-            className="w-full h-14 text-lg font-semibold rounded-xl border-border text-foreground hover:bg-secondary"
-          >
-            {isProcessingCash ? (
-              <span className="flex items-center gap-2">
-                <Spinner className="w-5 h-5" />
-                Submitting...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Banknote className="w-5 h-5" />
-                Pay Cash at Counter
-              </span>
-            )}
-          </Button>
+      {/* Sticky Pay Button - Only shown on card details step */}
+      {step === "card-details" && (
+        <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4">
+          <div className="max-w-md mx-auto">
+            <Button
+              onClick={handlePayment}
+              disabled={isProcessing}
+              className="w-full h-14 text-lg font-semibold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              {isProcessing ? (
+                <span className="flex items-center gap-2">
+                  <Spinner className="w-5 h-5" />
+                  Processing...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Pay {total.toFixed(2)} €
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
