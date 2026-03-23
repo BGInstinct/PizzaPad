@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { ArrowLeft, CreditCard, Lock, CheckCircle2, Banknote, Sparkles, Gift, Minus, Plus } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/context/auth-context"
 import { AuthModal } from "./auth-modal"
 
@@ -105,12 +104,14 @@ export function Checkout({
     setIsProcessing(true)
 
     try {
-      const supabase = createClient()
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
       
-      // Create order in database (amounts stored as cents/integers)
-      const { data, error: dbError } = await supabase
-        .from("orders")
-        .insert({
+      // Create order via API (stored in JSON file)
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           table_number: tableNumber,
           restaurant_name: restaurantName,
           items: cartItems,
@@ -120,19 +121,17 @@ export function Checkout({
           total: Math.round(total * 100),
           order_status: "confirmed",
           payment_status: "paid",
-          stripe_session_id: `mock_card_${Date.now()}`,
+          payment_method: "card",
           user_id: user?.id || null,
+          user_email: user?.email || null,
           is_guest: isGuest,
           points_redeemed: pointsToRedeem,
           points_earned: pointsToEarn,
-        })
-        .select("id")
-        .single()
+        }),
+      })
 
-      if (dbError) throw dbError
-
-      // Simulate payment processing delay
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || "Failed to create order")
 
       // Redeem points if any were used
       if (pointsToRedeem > 0 && user) {
@@ -162,12 +161,14 @@ export function Checkout({
     setIsProcessingCash(true)
 
     try {
-      const supabase = createClient()
+      // Small delay for UX
+      await new Promise(resolve => setTimeout(resolve, 800))
       
-      // Create order in database with cash payment
-      const { data, error: dbError } = await supabase
-        .from("orders")
-        .insert({
+      // Create order via API (stored in JSON file)
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           table_number: tableNumber,
           restaurant_name: restaurantName,
           items: cartItems,
@@ -177,19 +178,17 @@ export function Checkout({
           total: Math.round(total * 100),
           order_status: "confirmed",
           payment_status: "pending_cash",
-          stripe_session_id: `cash_${Date.now()}`,
+          payment_method: "cash",
           user_id: user?.id || null,
+          user_email: user?.email || null,
           is_guest: isGuest,
           points_redeemed: pointsToRedeem,
           points_earned: pointsToEarn,
-        })
-        .select("id")
-        .single()
+        }),
+      })
 
-      if (dbError) throw dbError
-
-      // Small delay for UX
-      await new Promise(resolve => setTimeout(resolve, 800))
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || "Failed to create order")
 
       // Redeem points if any were used
       if (pointsToRedeem > 0 && user) {
