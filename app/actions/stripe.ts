@@ -55,7 +55,7 @@ export async function createCheckoutSession(
   // Create line items for Stripe
   const lineItems = cartItems.map((item) => ({
     price_data: {
-      currency: "usd",
+      currency: "eur",
       product_data: {
         name: `${item.size} ${item.crust} Pizza`,
         description: `${item.sauce} sauce, ${item.cheese} cheese${item.toppings.length > 0 ? `, Toppings: ${item.toppings.join(", ")}` : ""}${item.specialInstructions ? ` | Notes: ${item.specialInstructions}` : ""}`,
@@ -68,7 +68,7 @@ export async function createCheckoutSession(
   // Add tax as a separate line item
   lineItems.push({
     price_data: {
-      currency: "usd",
+      currency: "eur",
       product_data: {
         name: "Tax (8%)",
         description: "Sales tax",

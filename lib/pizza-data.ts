@@ -1,46 +1,46 @@
 export const SIZES = [
-  { id: "small", name: "Small", description: '10"', price: 10.99 },
-  { id: "medium", name: "Medium", description: '12"', price: 13.99 },
-  { id: "large", name: "Large", description: '14"', price: 16.99 },
-  { id: "xlarge", name: "X-Large", description: '16"', price: 19.99 },
+  { id: "small", name: "Small", description: '25 cm', price: 6.59 },
+  { id: "medium", name: "Medium", description: '30 cm', price: 8.39 },
+  { id: "large", name: "Large", description: '35 cm', price: 10.19 },
+  { id: "xlarge", name: "X-Large", description: '40 cm', price: 11.99 },
 ] as const
 
 export const CRUSTS = [
   { id: "thin", name: "Thin Crust", price: 0 },
   { id: "classic", name: "Classic Hand-Tossed", price: 0 },
-  { id: "thick", name: "Thick & Fluffy", price: 1.50 },
-  { id: "stuffed", name: "Cheese Stuffed", price: 3.00 },
+  { id: "thick", name: "Thick & Fluffy", price: 0.90 },
+  { id: "stuffed", name: "Cheese Stuffed", price: 1.80 },
 ] as const
 
 export const SAUCES = [
   { id: "marinara", name: "Classic Marinara", price: 0 },
-  { id: "garlic", name: "Garlic Parmesan", price: 0.50 },
-  { id: "bbq", name: "Smoky BBQ", price: 0.50 },
-  { id: "buffalo", name: "Buffalo", price: 0.50 },
+  { id: "garlic", name: "Garlic Parmesan", price: 0.30 },
+  { id: "bbq", name: "Smoky BBQ", price: 0.30 },
+  { id: "buffalo", name: "Buffalo", price: 0.30 },
   { id: "none", name: "No Sauce", price: 0 },
 ] as const
 
 export const CHEESE_AMOUNTS = [
   { id: "light", name: "Light", price: 0 },
   { id: "normal", name: "Normal", price: 0 },
-  { id: "extra", name: "Extra", price: 2.00 },
-  { id: "none", name: "No Cheese", price: -1.00 },
+  { id: "extra", name: "Extra", price: 1.20 },
+  { id: "none", name: "No Cheese", price: -0.60 },
 ] as const
 
 export const TOPPINGS = [
-  { id: "pepperoni", name: "Pepperoni", price: 1.50, category: "meats" },
-  { id: "sausage", name: "Italian Sausage", price: 1.50, category: "meats" },
-  { id: "bacon", name: "Crispy Bacon", price: 1.75, category: "meats" },
-  { id: "ham", name: "Ham", price: 1.50, category: "meats" },
-  { id: "chicken", name: "Grilled Chicken", price: 2.00, category: "meats" },
-  { id: "mushrooms", name: "Mushrooms", price: 1.00, category: "veggies" },
-  { id: "onions", name: "Red Onions", price: 0.75, category: "veggies" },
-  { id: "peppers", name: "Bell Peppers", price: 0.75, category: "veggies" },
-  { id: "olives", name: "Black Olives", price: 1.00, category: "veggies" },
-  { id: "jalapenos", name: "Jalapenos", price: 0.75, category: "veggies" },
-  { id: "tomatoes", name: "Fresh Tomatoes", price: 1.00, category: "veggies" },
-  { id: "spinach", name: "Fresh Spinach", price: 1.00, category: "veggies" },
-  { id: "pineapple", name: "Pineapple", price: 1.00, category: "veggies" },
+  { id: "pepperoni", name: "Pepperoni", price: 0.90, category: "meats" },
+  { id: "sausage", name: "Italian Sausage", price: 0.90, category: "meats" },
+  { id: "bacon", name: "Crispy Bacon", price: 1.05, category: "meats" },
+  { id: "ham", name: "Ham", price: 0.90, category: "meats" },
+  { id: "chicken", name: "Grilled Chicken", price: 1.20, category: "meats" },
+  { id: "mushrooms", name: "Mushrooms", price: 0.60, category: "veggies" },
+  { id: "onions", name: "Red Onions", price: 0.45, category: "veggies" },
+  { id: "peppers", name: "Bell Peppers", price: 0.45, category: "veggies" },
+  { id: "olives", name: "Black Olives", price: 0.60, category: "veggies" },
+  { id: "jalapenos", name: "Jalapenos", price: 0.45, category: "veggies" },
+  { id: "tomatoes", name: "Fresh Tomatoes", price: 0.60, category: "veggies" },
+  { id: "spinach", name: "Fresh Spinach", price: 0.60, category: "veggies" },
+  { id: "pineapple", name: "Pineapple", price: 0.60, category: "veggies" },
 ] as const
 
 export type SizeId = typeof SIZES[number]["id"]
