@@ -94,7 +94,7 @@ export function PizzaBuilder({ onAddToCart, onBack, cartItemCount, onViewCart }:
                 onClick={() => updateConfig("size", size.id as SizeId)}
                 title={size.name}
                 subtitle={size.description}
-                price={`$${size.price.toFixed(2)}`}
+                price={`${size.price.toFixed(2)} \u20AC`}
               />
             ))}
           </div>
@@ -109,7 +109,7 @@ export function PizzaBuilder({ onAddToCart, onBack, cartItemCount, onViewCart }:
                 selected={config.crust === crust.id}
                 onClick={() => updateConfig("crust", crust.id as CrustId)}
                 title={crust.name}
-                price={crust.price > 0 ? `+$${crust.price.toFixed(2)}` : "Included"}
+                price={crust.price > 0 ? `+${crust.price.toFixed(2)} \u20AC` : "Included"}
               />
             ))}
           </div>
@@ -124,7 +124,7 @@ export function PizzaBuilder({ onAddToCart, onBack, cartItemCount, onViewCart }:
                 selected={config.sauce === sauce.id}
                 onClick={() => updateConfig("sauce", sauce.id as SauceId)}
                 title={sauce.name}
-                price={sauce.price > 0 ? `+$${sauce.price.toFixed(2)}` : "Included"}
+                price={sauce.price > 0 ? `+${sauce.price.toFixed(2)} \u20AC` : "Included"}
               />
             ))}
           </div>
@@ -159,7 +159,7 @@ export function PizzaBuilder({ onAddToCart, onBack, cartItemCount, onViewCart }:
                 selected={config.toppings.includes(topping.id)}
                 onClick={() => toggleTopping(topping.id)}
                 title={topping.name}
-                price={`+$${topping.price.toFixed(2)}`}
+                price={`+${topping.price.toFixed(2)} \u20AC`}
               />
             ))}
           </div>
@@ -174,7 +174,7 @@ export function PizzaBuilder({ onAddToCart, onBack, cartItemCount, onViewCart }:
                 selected={config.toppings.includes(topping.id)}
                 onClick={() => toggleTopping(topping.id)}
                 title={topping.name}
-                price={`+$${topping.price.toFixed(2)}`}
+                price={`+${topping.price.toFixed(2)} \u20AC`}
               />
             ))}
           </div>
@@ -199,7 +199,7 @@ export function PizzaBuilder({ onAddToCart, onBack, cartItemCount, onViewCart }:
         >
           <span>Add to Order</span>
           <span className="ml-2 px-3 py-1 bg-primary-foreground/20 rounded-lg">
-            ${price.toFixed(2)}
+            {price.toFixed(2)} \u20AC
           </span>
         </Button>
       </div>

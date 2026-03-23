@@ -78,7 +78,7 @@ export function ConfirmationScreen({
                     </p>
                   </div>
                   <span className="text-foreground font-medium flex-shrink-0">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {(item.price * item.quantity).toFixed(2)} \u20AC
                   </span>
                 </div>
               </div>
@@ -88,7 +88,7 @@ export function ConfirmationScreen({
 
         <div className="flex justify-between items-center mt-6 pt-4 border-t border-border">
           <span className="font-semibold text-foreground">Total Paid</span>
-          <span className="text-xl font-bold text-primary">${total.toFixed(2)}</span>
+          <span className="text-xl font-bold text-primary">{total.toFixed(2)} \u20AC</span>
         </div>
       </div>
 

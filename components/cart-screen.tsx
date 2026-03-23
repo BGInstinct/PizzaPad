@@ -113,7 +113,7 @@ export function CartScreen({
                     </button>
                   </div>
                   <span className="text-primary font-semibold text-lg">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {(item.price * item.quantity).toFixed(2)} \u20AC
                   </span>
                 </div>
               </div>
@@ -136,15 +136,15 @@ export function CartScreen({
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{subtotal.toFixed(2)} \u20AC</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Tax (8%)</span>
-              <span>${tax.toFixed(2)}</span>
+              <span>{tax.toFixed(2)} \u20AC</span>
             </div>
             <div className="flex justify-between text-foreground font-semibold text-lg pt-2 border-t border-border">
               <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>{total.toFixed(2)} \u20AC</span>
             </div>
           </div>
           
