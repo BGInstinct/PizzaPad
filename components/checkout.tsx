@@ -208,7 +208,7 @@ export function Checkout({
                 <span className="text-muted-foreground">
                   {paymentMethod === "cash" ? "Total Due" : "Total Paid"}
                 </span>
-                <span className="font-semibold text-foreground">{total.toFixed(2)} \u20AC</span>
+                <span className="font-semibold text-foreground">{total.toFixed(2)} €</span>
               </div>
               <div className="border-t border-border pt-4">
                 <p className="text-sm text-muted-foreground text-center">
@@ -263,21 +263,21 @@ export function Checkout({
                   <span className="text-muted-foreground">
                     {item.quantity}x {item.size} {item.crust} Pizza
                   </span>
-                  <span className="text-foreground">{(item.price * item.quantity).toFixed(2)} \u20AC</span>
+                  <span className="text-foreground">{(item.price * item.quantity).toFixed(2)} €</span>
                 </div>
               ))}
               <div className="border-t border-border pt-2 mt-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="text-foreground">{subtotal.toFixed(2)} \u20AC</span>
+                  <span className="text-foreground">{subtotal.toFixed(2)} €</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax (8%)</span>
-                  <span className="text-foreground">{tax.toFixed(2)} \u20AC</span>
+                  <span className="text-foreground">{tax.toFixed(2)} €</span>
                 </div>
                 <div className="flex justify-between font-semibold text-base mt-2">
                   <span className="text-foreground">Total</span>
-                  <span className="text-primary">{total.toFixed(2)} \u20AC</span>
+                  <span className="text-primary">{total.toFixed(2)} €</span>
                 </div>
               </div>
             </div>
@@ -369,7 +369,7 @@ export function Checkout({
             ) : (
               <span className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5" />
-                Pay Card {total.toFixed(2)} \u20AC
+                Pay Card {total.toFixed(2)} €
               </span>
             )}
           </Button>
