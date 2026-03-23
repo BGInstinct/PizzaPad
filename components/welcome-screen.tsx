@@ -2,6 +2,7 @@
 
 import { Pizza, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { UserBadge } from "./user-badge"
 
 interface WelcomeScreenProps {
   restaurantName: string
@@ -13,13 +14,16 @@ export function WelcomeScreen({ restaurantName, tableNumber, onStartOrder }: Wel
   return (
     <div className="min-h-dvh flex flex-col items-center justify-between px-6 py-12">
       {/* Header */}
-      <div className="text-center">
-        <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">
-          Welcome to
-        </p>
-        <h2 className="text-xl font-semibold text-foreground mt-1">
-          {restaurantName}
-        </h2>
+      <div className="w-full flex items-center justify-between">
+        <div className="text-left">
+          <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">
+            Welcome to
+          </p>
+          <h2 className="text-xl font-semibold text-foreground mt-1">
+            {restaurantName}
+          </h2>
+        </div>
+        <UserBadge />
       </div>
 
       {/* Logo & Branding */}

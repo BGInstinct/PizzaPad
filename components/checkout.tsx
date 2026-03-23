@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
-import { ArrowLeft, CreditCard, Lock, CheckCircle2, Banknote } from "lucide-react"
+import { ArrowLeft, CreditCard, Lock, CheckCircle2, Banknote, Sparkles, Gift, Minus, Plus } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/context/auth-context"
+import { AuthModal } from "./auth-modal"
 
 interface CartItemData {
   id: string
@@ -35,6 +37,7 @@ export function Checkout({
   onBack,
   onSuccess 
 }: CheckoutProps) {
+  const { user, isGuest, addPoints, redeemPoints, getPointsValue } = useAuth()
   const [step, setStep] = useState<"select" | "card-details" | "complete">("select")
   const [isProcessing, setIsProcessing] = useState(false)
   const [isProcessingCash, setIsProcessingCash] = useState(false)
@@ -42,6 +45,9 @@ export function Checkout({
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cash">("card")
   const [orderId, setOrderId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [pointsToRedeem, setPointsToRedeem] = useState(0)
+  const [earnedPoints, setEarnedPoints] = useState(0)
   
   // Mock card form state
   const [cardNumber, setCardNumber] = useState("")
@@ -51,7 +57,16 @@ export function Checkout({
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const tax = subtotal * 0.08
-  const total = subtotal + tax
+  
+  // Calculate discounts
+  const guestDiscount = isGuest ? subtotal * 0.05 : 0 // 5% discount for guests
+  const pointsDiscount = getPointsValue(pointsToRedeem) // Convert points to euro discount
+  const totalBeforeDiscounts = subtotal + tax
+  const totalDiscount = guestDiscount + pointsDiscount
+  const total = Math.max(0, totalBeforeDiscounts - totalDiscount)
+  
+  // Points that will be earned (1 point per 1 euro spent, only for logged in users)
+  const pointsToEarn = user ? Math.floor(total) : 0
 
   const formatCardNumber = (value: string) => {
     const numbers = value.replace(/\D/g, "")
@@ -101,10 +116,15 @@ export function Checkout({
           items: cartItems,
           subtotal: Math.round(subtotal * 100),
           tax: Math.round(tax * 100),
+          discount: Math.round(totalDiscount * 100),
           total: Math.round(total * 100),
           order_status: "confirmed",
           payment_status: "paid",
           stripe_session_id: `mock_card_${Date.now()}`,
+          user_id: user?.id || null,
+          is_guest: isGuest,
+          points_redeemed: pointsToRedeem,
+          points_earned: pointsToEarn,
         })
         .select("id")
         .single()
@@ -113,6 +133,17 @@ export function Checkout({
 
       // Simulate payment processing delay
       await new Promise(resolve => setTimeout(resolve, 1500))
+
+      // Redeem points if any were used
+      if (pointsToRedeem > 0 && user) {
+        redeemPoints(pointsToRedeem)
+      }
+      
+      // Add earned points for logged in users
+      if (user && pointsToEarn > 0) {
+        addPoints(pointsToEarn)
+        setEarnedPoints(pointsToEarn)
+      }
 
       setPaymentMethod("card")
       setOrderId(data.id)
@@ -142,10 +173,15 @@ export function Checkout({
           items: cartItems,
           subtotal: Math.round(subtotal * 100),
           tax: Math.round(tax * 100),
+          discount: Math.round(totalDiscount * 100),
           total: Math.round(total * 100),
           order_status: "confirmed",
           payment_status: "pending_cash",
           stripe_session_id: `cash_${Date.now()}`,
+          user_id: user?.id || null,
+          is_guest: isGuest,
+          points_redeemed: pointsToRedeem,
+          points_earned: pointsToEarn,
         })
         .select("id")
         .single()
@@ -154,6 +190,17 @@ export function Checkout({
 
       // Small delay for UX
       await new Promise(resolve => setTimeout(resolve, 800))
+
+      // Redeem points if any were used
+      if (pointsToRedeem > 0 && user) {
+        redeemPoints(pointsToRedeem)
+      }
+      
+      // Add earned points for logged in users
+      if (user && pointsToEarn > 0) {
+        addPoints(pointsToEarn)
+        setEarnedPoints(pointsToEarn)
+      }
 
       setPaymentMethod("cash")
       setOrderId(data.id)
@@ -205,6 +252,12 @@ export function Checkout({
                   {cartItems.reduce((sum, item) => sum + item.quantity, 0)} pizzas
                 </span>
               </div>
+              {totalDiscount > 0 && (
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-muted-foreground">Discount</span>
+                  <span className="font-semibold text-success">-{totalDiscount.toFixed(2)} €</span>
+                </div>
+              )}
               <div className="flex justify-between items-center mb-4">
                 <span className="text-muted-foreground">
                   {paymentMethod === "cash" ? "Total Due" : "Total Paid"}
@@ -218,6 +271,25 @@ export function Checkout({
               </div>
             </CardContent>
           </Card>
+          
+          {/* Points earned notification */}
+          {earnedPoints > 0 && (
+            <Card className="w-full max-w-sm bg-primary/10 border-primary/20 mb-6">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">+{earnedPoints} points earned!</p>
+                    <p className="text-sm text-muted-foreground">
+                      You now have {user?.points} total points
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
           <Button
             onClick={() => window.location.reload()}
@@ -287,14 +359,106 @@ export function Checkout({
                   <span className="text-muted-foreground">Tax (8%)</span>
                   <span className="text-foreground">{tax.toFixed(2)} €</span>
                 </div>
+                {guestDiscount > 0 && (
+                  <div className="flex justify-between text-success">
+                    <span>Guest Discount (5%)</span>
+                    <span>-{guestDiscount.toFixed(2)} €</span>
+                  </div>
+                )}
+                {pointsDiscount > 0 && (
+                  <div className="flex justify-between text-success">
+                    <span>Points Redeemed ({pointsToRedeem} pts)</span>
+                    <span>-{pointsDiscount.toFixed(2)} €</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-semibold text-base mt-2">
                   <span className="text-foreground">Total</span>
                   <span className="text-primary">{total.toFixed(2)} €</span>
                 </div>
+                {pointsToEarn > 0 && (
+                  <div className="flex justify-between text-xs text-primary mt-1">
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Points you will earn
+                    </span>
+                    <span>+{pointsToEarn} pts</span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
+        
+        {/* Points Redemption - Only for logged in users with points */}
+        {user && user.points > 0 && step === "select" && (
+          <Card className="bg-card border-border mb-4">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Gift className="w-5 h-5 text-primary" />
+                <h2 className="font-semibold text-foreground">Redeem Points</h2>
+              </div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-muted-foreground">
+                  Available: <span className="text-foreground font-medium">{user.points} points</span>
+                  <span className="text-xs ml-1">(worth {getPointsValue(user.points).toFixed(2)} €)</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setPointsToRedeem(Math.max(0, pointsToRedeem - 10))}
+                  disabled={pointsToRedeem === 0}
+                  className="h-10 w-10"
+                >
+                  <Minus className="w-4 h-4" />
+                </Button>
+                <div className="flex-1 text-center">
+                  <span className="text-2xl font-bold text-foreground">{pointsToRedeem}</span>
+                  <span className="text-sm text-muted-foreground ml-1">points</span>
+                  <p className="text-xs text-primary">= {getPointsValue(pointsToRedeem).toFixed(2)} € off</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setPointsToRedeem(Math.min(user.points, pointsToRedeem + 10))}
+                  disabled={pointsToRedeem >= user.points}
+                  className="h-10 w-10"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPointsToRedeem(user.points)}
+                className="w-full mt-2 text-xs text-primary"
+              >
+                Use all {user.points} points
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Login prompt for non-authenticated users */}
+        {!user && !isGuest && step === "select" && (
+          <Card className="bg-primary/5 border-primary/20 mb-4">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground text-sm">Earn points on this order!</p>
+                  <p className="text-xs text-muted-foreground">Sign in to earn {Math.floor(totalBeforeDiscounts)} points</p>
+                </div>
+                <Button size="sm" onClick={() => setAuthModalOpen(true)}>
+                  Sign In
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Step 1: Payment Method Selection */}
         {step === "select" && (
@@ -437,6 +601,9 @@ export function Checkout({
           </div>
         </div>
       )}
+      
+      {/* Auth Modal */}
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>
   )
 }
