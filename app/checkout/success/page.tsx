@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, Clock, Loader2, UtensilsCrossed } from "lucide-react"
 
@@ -15,46 +14,37 @@ function SuccessContent() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function updateAndFetchOrder() {
+    async function fetchOrder() {
       if (!orderId) {
         setError("Order not found")
         setLoading(false)
         return
       }
 
-      const supabase = createClient()
+      try {
+        // Fetch orders from file-based API
+        const response = await fetch("/api/orders")
+        if (!response.ok) throw new Error("Failed to fetch orders")
+        
+        const orders = await response.json()
+        const foundOrder = orders.find((o: any) => o.id === orderId)
+        
+        if (!foundOrder) {
+          setError("Could not load order details")
+          setLoading(false)
+          return
+        }
 
-      // Update order status to paid
-      const { error: updateError } = await supabase
-        .from("orders")
-        .update({
-          payment_status: "paid",
-          order_status: "confirmed",
-        })
-        .eq("id", orderId)
-
-      if (updateError) {
-        console.error("Error updating order:", updateError)
-      }
-
-      // Fetch the order
-      const { data, error: fetchError } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .single()
-
-      if (fetchError || !data) {
+        setOrder(foundOrder)
+        setLoading(false)
+      } catch (err) {
+        console.error("Error fetching order:", err)
         setError("Could not load order details")
         setLoading(false)
-        return
       }
-
-      setOrder(data)
-      setLoading(false)
     }
 
-    updateAndFetchOrder()
+    fetchOrder()
   }, [orderId])
 
   if (loading) {
@@ -79,7 +69,7 @@ function SuccessContent() {
     )
   }
 
-  const orderNumber = order.id.slice(-6).toUpperCase()
+  const orderNumber = order.id.slice(-8).toUpperCase()
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -144,7 +134,7 @@ function SuccessContent() {
                     </p>
                   </div>
                   <p className="text-foreground">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {(item.price * item.quantity).toFixed(2)} €
                   </p>
                 </div>
               ))}
@@ -153,15 +143,21 @@ function SuccessContent() {
             <div className="mt-4 border-t border-border pt-4">
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Subtotal</span>
-                <span>${(order.subtotal / 100).toFixed(2)}</span>
+                <span>{(order.subtotal / 100).toFixed(2)} €</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Tax</span>
-                <span>${(order.tax / 100).toFixed(2)}</span>
+                <span>{(order.tax / 100).toFixed(2)} €</span>
               </div>
+              {order.discount > 0 && (
+                <div className="flex justify-between text-sm text-success">
+                  <span>Discount</span>
+                  <span>-{(order.discount / 100).toFixed(2)} €</span>
+                </div>
+              )}
               <div className="mt-2 flex justify-between text-lg font-bold text-foreground">
                 <span>Total Paid</span>
-                <span className="text-success">${(order.total / 100).toFixed(2)}</span>
+                <span className="text-success">{(order.total / 100).toFixed(2)} €</span>
               </div>
             </div>
           </div>

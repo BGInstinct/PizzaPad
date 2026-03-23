@@ -1,34 +1,12 @@
 "use client"
 
-import { Suspense, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { Suspense } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { XCircle, ArrowLeft, Loader2 } from "lucide-react"
 
 function CancelContent() {
-  const searchParams = useSearchParams()
   const router = useRouter()
-  const orderId = searchParams.get("order_id")
-
-  useEffect(() => {
-    async function cancelOrder() {
-      if (!orderId) return
-
-      const supabase = createClient()
-      
-      // Update order status to cancelled
-      await supabase
-        .from("orders")
-        .update({
-          order_status: "cancelled",
-          payment_status: "cancelled",
-        })
-        .eq("id", orderId)
-    }
-
-    cancelOrder()
-  }, [orderId])
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
