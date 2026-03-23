@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, Clock, Loader2, UtensilsCrossed } from "lucide-react"
 
-export default function CheckoutSuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const orderId = searchParams.get("order_id")
@@ -29,7 +29,7 @@ export default function CheckoutSuccessPage() {
         .from("orders")
         .update({
           payment_status: "paid",
-          status: "confirmed",
+          order_status: "confirmed",
         })
         .eq("id", orderId)
 
@@ -153,15 +153,15 @@ export default function CheckoutSuccessPage() {
             <div className="mt-4 border-t border-border pt-4">
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Subtotal</span>
-                <span>${order.subtotal.toFixed(2)}</span>
+                <span>${(order.subtotal / 100).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Tax</span>
-                <span>${order.tax.toFixed(2)}</span>
+                <span>${(order.tax / 100).toFixed(2)}</span>
               </div>
               <div className="mt-2 flex justify-between text-lg font-bold text-foreground">
                 <span>Total Paid</span>
-                <span className="text-success">${order.total.toFixed(2)}</span>
+                <span className="text-success">${(order.total / 100).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -180,5 +180,22 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <p className="mt-4 text-lg text-muted-foreground">Loading...</p>
+    </div>
+  )
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <SuccessContent />
+    </Suspense>
   )
 }

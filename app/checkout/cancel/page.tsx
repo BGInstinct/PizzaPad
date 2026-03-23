@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { XCircle, ArrowLeft } from "lucide-react"
+import { XCircle, ArrowLeft, Loader2 } from "lucide-react"
 
-export default function CheckoutCancelPage() {
+function CancelContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const orderId = searchParams.get("order_id")
@@ -21,7 +21,7 @@ export default function CheckoutCancelPage() {
       await supabase
         .from("orders")
         .update({
-          status: "cancelled",
+          order_status: "cancelled",
           payment_status: "cancelled",
         })
         .eq("id", orderId)
@@ -63,5 +63,22 @@ export default function CheckoutCancelPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <p className="mt-4 text-lg text-muted-foreground">Loading...</p>
+    </div>
+  )
+}
+
+export default function CheckoutCancelPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CancelContent />
+    </Suspense>
   )
 }

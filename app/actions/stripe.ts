@@ -38,10 +38,10 @@ export async function createCheckoutSession(
       table_number: tableNumber,
       restaurant_name: restaurantName,
       items: cartItems,
-      subtotal: subtotal,
-      tax: tax,
-      total: total,
-      status: "pending",
+      subtotal: Math.round(subtotal * 100),
+      tax: Math.round(tax * 100),
+      total: Math.round(total * 100),
+      order_status: "pending",
       payment_status: "pending",
     })
     .select()

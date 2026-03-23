@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
-import { ArrowLeft, CreditCard, Lock, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, CreditCard, Lock, CheckCircle2, Banknote } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface CartItemData {
@@ -36,7 +36,9 @@ export function Checkout({
   onSuccess 
 }: CheckoutProps) {
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isProcessingCash, setIsProcessingCash] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "cash">("card")
   const [orderId, setOrderId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   
@@ -89,19 +91,19 @@ export function Checkout({
     try {
       const supabase = createClient()
       
-      // Create order in database
+      // Create order in database (amounts stored as cents/integers)
       const { data, error: dbError } = await supabase
         .from("orders")
         .insert({
           table_number: tableNumber,
           restaurant_name: restaurantName,
           items: cartItems,
-          subtotal: subtotal,
-          tax: tax,
-          total: total,
-          status: "confirmed",
+          subtotal: Math.round(subtotal * 100),
+          tax: Math.round(tax * 100),
+          total: Math.round(total * 100),
+          order_status: "confirmed",
           payment_status: "paid",
-          stripe_session_id: `mock_${Date.now()}`,
+          stripe_session_id: `mock_card_${Date.now()}`,
         })
         .select("id")
         .single()
@@ -111,6 +113,7 @@ export function Checkout({
       // Simulate payment processing delay
       await new Promise(resolve => setTimeout(resolve, 1500))
 
+      setPaymentMethod("card")
       setOrderId(data.id)
       setIsComplete(true)
       onSuccess(data.id)
@@ -122,6 +125,47 @@ export function Checkout({
     }
   }
 
+  const handleCashPayment = async () => {
+    setError(null)
+    setIsProcessingCash(true)
+
+    try {
+      const supabase = createClient()
+      
+      // Create order in database with cash payment
+      const { data, error: dbError } = await supabase
+        .from("orders")
+        .insert({
+          table_number: tableNumber,
+          restaurant_name: restaurantName,
+          items: cartItems,
+          subtotal: Math.round(subtotal * 100),
+          tax: Math.round(tax * 100),
+          total: Math.round(total * 100),
+          order_status: "confirmed",
+          payment_status: "pending_cash",
+          stripe_session_id: `cash_${Date.now()}`,
+        })
+        .select("id")
+        .single()
+
+      if (dbError) throw dbError
+
+      // Small delay for UX
+      await new Promise(resolve => setTimeout(resolve, 800))
+
+      setPaymentMethod("cash")
+      setOrderId(data.id)
+      setIsComplete(true)
+      onSuccess(data.id)
+    } catch (err) {
+      console.error("Cash order error:", err)
+      setError("Failed to submit order. Please try again.")
+    } finally {
+      setIsProcessingCash(false)
+    }
+  }
+
   if (isComplete && orderId) {
     return (
       <div className="min-h-dvh flex flex-col bg-background">
@@ -130,8 +174,14 @@ export function Checkout({
             <CheckCircle2 className="w-10 h-10 text-success" />
           </div>
           
-          <h1 className="text-2xl font-bold text-foreground mb-2">Payment Successful!</h1>
-          <p className="text-muted-foreground mb-6">Your order has been sent to the kitchen</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            {paymentMethod === "cash" ? "Order Confirmed!" : "Payment Successful!"}
+          </h1>
+          <p className="text-muted-foreground mb-6">
+            {paymentMethod === "cash" 
+              ? "Please pay at the counter when your order is ready" 
+              : "Your order has been sent to the kitchen"}
+          </p>
           
           <Card className="w-full max-w-sm bg-card border-border mb-6">
             <CardContent className="p-6 text-center">
@@ -155,7 +205,9 @@ export function Checkout({
                 </span>
               </div>
               <div className="flex justify-between items-center mb-4">
-                <span className="text-muted-foreground">Total Paid</span>
+                <span className="text-muted-foreground">
+                  {paymentMethod === "cash" ? "Total Due" : "Total Paid"}
+                </span>
                 <span className="font-semibold text-foreground">${total.toFixed(2)}</span>
               </div>
               <div className="border-t border-border pt-4">
@@ -300,12 +352,12 @@ export function Checkout({
         </Card>
       </div>
 
-      {/* Sticky Pay Button */}
+      {/* Sticky Pay Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-4">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto space-y-3">
           <Button
             onClick={handlePayment}
-            disabled={isProcessing}
+            disabled={isProcessing || isProcessingCash}
             className="w-full h-14 text-lg font-semibold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {isProcessing ? (
@@ -314,7 +366,28 @@ export function Checkout({
                 Processing...
               </span>
             ) : (
-              `Pay $${total.toFixed(2)}`
+              <span className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Pay Card ${total.toFixed(2)}
+              </span>
+            )}
+          </Button>
+          <Button
+            onClick={handleCashPayment}
+            disabled={isProcessing || isProcessingCash}
+            variant="outline"
+            className="w-full h-14 text-lg font-semibold rounded-xl border-border text-foreground hover:bg-secondary"
+          >
+            {isProcessingCash ? (
+              <span className="flex items-center gap-2">
+                <Spinner className="w-5 h-5" />
+                Submitting...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Banknote className="w-5 h-5" />
+                Pay Cash at Counter
+              </span>
             )}
           </Button>
         </div>
