@@ -1,1 +1,75 @@
-[]
+[
+  {
+    "id": "ORD-1775474710577-TIZMQM",
+    "table_number": 7,
+    "restaurant_name": "Napoli's Kitchen",
+    "items": [
+      {
+        "id": "b3z7dm2",
+        "size": "medium",
+        "crust": "classic",
+        "sauce": "marinara",
+        "cheese": "normal",
+        "toppings": [],
+        "specialInstructions": "",
+        "price": 8.39,
+        "quantity": 1
+      },
+      {
+        "id": "vd5crx0",
+        "size": "medium",
+        "crust": "classic",
+        "sauce": "marinara",
+        "cheese": "normal",
+        "toppings": [],
+        "specialInstructions": "",
+        "price": 8.39,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 1678,
+    "tax": 134,
+    "discount": 0,
+    "total": 1812,
+    "order_status": "confirmed",
+    "payment_status": "pending_cash",
+    "payment_method": "cash",
+    "user_id": null,
+    "user_email": null,
+    "is_guest": false,
+    "points_redeemed": 0,
+    "points_earned": 0,
+    "created_at": "2026-04-06T11:25:10.578Z"
+  },
+  {
+    "id": "ORD-1775475668110-DDBQC2",
+    "table_number": 7,
+    "restaurant_name": "Napoli's Kitchen",
+    "items": [
+      {
+        "id": "3iojwjq",
+        "size": "medium",
+        "crust": "classic",
+        "sauce": "marinara",
+        "cheese": "normal",
+        "toppings": [],
+        "specialInstructions": "",
+        "price": 8.39,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 839,
+    "tax": 67,
+    "discount": 0,
+    "total": 906,
+    "order_status": "confirmed",
+    "payment_status": "pending_cash",
+    "payment_method": "cash",
+    "user_id": null,
+    "user_email": null,
+    "is_guest": false,
+    "points_redeemed": 0,
+    "points_earned": 0,
+    "created_at": "2026-04-06T11:41:08.110Z"
+  }
+]
