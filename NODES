@@ -1,0 +1,175 @@
+📋 Промпт за контекст на проекта: "Restaurant OS"
+
+Роля: Ти си експерт по системен дизайн и full-stack разработка. Помагаш ми в изграждането на локална система за управление на ресторант.
+
+Архитектура на системата:
+
+    Сървър: Физическа машина с Linux Ubuntu LTS, работеща като централен хост.
+
+    База данни: SQL (MySQL/MariaDB/PostgreSQL), съхраняваща меню, поръчки и статуси.
+
+    Клиентска част (Поръчки): Вебсайт (вече настъпен/накоден), през който се приемат поръчките.
+
+    Кухня (Визуализация): Втори монитор, свързан директно към сървъра, показващ табло с активни поръчки в реално време (Kiosk mode).
+
+    Каса: Интерфейс на същата машина за финализиране на плащания и отчетност.
+
+Технически стек и изисквания:
+
+    Backend: Node.js / PHP / Python (в процес на избор), който свързва фронтенда с SQL базата.
+
+    Real-time: Нужда от синхронизация в реално време (WebSockets/Socket.io), за да не се налага ръчно опресняване (F5) в кухнята.
+
+    Мрежа: Локална мрежа със статично IP за сървъра.
+
+Цел на проекта: Създаване на стабилна, затворена локална екосистема, която е бърза, евтина за поддръжка и не зависи от външен интернет.
+
+Текущ статус: Имам готов фронтенд код, но трябва да сетъпна сървъра и да свържа базата данни с интерфейсите.
+
+
+---
+
+
+Here is an in-depth description of the **systems and tools** used in **PizzaPad**, based on the repo files.
+
+---
+
+## 1. Application architecture
+
+**PizzaPad** is a **table-ordering web app** for a pizzeria: customers build pizzas, review the cart, pay (card simulation or cash-at-counter), and see confirmation; staff use a **cashier** view to find orders and mark cash payments. The main customer flow lives under the App Router at `app/page.tsx` (screen state machine: welcome → builder → cart → checkout). **`/cashier`** renders `CashierDashboard`.
+
+---
+
+## 2. Core runtime and framework
+
+| Piece | Role |
+|--------|------|
+| **Next.js 16** (`next`) | Full-stack React framework: **App Router** (`app/`), **Route Handlers** (`app/api/...`), **Server Actions** (`app/actions/stripe.ts` with `"use server"`). |
+| **React 19** + **React DOM 19** | UI with concurrent features; client components use `"use client"`. |
+| **TypeScript 5.7** | Strict typing (`tsconfig.json`: `strict: true`, path alias `@/*` → project root). |
+| **`next.config.mjs`** | `typescript.ignoreBuildErrors: true` (builds even if TS reports errors); `images.unoptimized: true`. |
+
+Scripts: `next dev`, `next build`, `next start`, `eslint .`. Lockfile **`pnpm-lock.yaml`** indicates **pnpm** as the intended package manager.
+
+---
+
+## 3. Frontend: UI, styling, and UX libraries
+
+| Tool | Purpose in this project |
+|------|-------------------------|
+| **Tailwind CSS v4** + **`@tailwindcss/postcss`** | Utility-first styling; `app/globals.css` imports `tailwindcss` and **`tw-animate-css`**, defines a **dark PizzaPad theme** (OKLCH tokens, primary red/orange). |
+| **shadcn/ui** (`components.json`) | **“New York”** style, **neutral** base, **CSS variables**, **`lucide`** icons; generates `components/ui/*`. |
+| **Radix UI** (many `@radix-ui/react-*` packages) | Accessible primitives for dialogs, dropdowns, tabs, etc., used by shadcn components. |
+| **`class-variance-authority` (CVA)** + **`clsx`** + **`tailwind-merge`** | Variant styling; `cn()` helper in `lib/utils.ts`. |
+| **`lucide-react`** | Icons across screens (e.g. checkout, cashier). |
+| **`next/font/google`** (`Geist`, `Geist_Mono`) | Font loading in `app/layout.tsx`. |
+| **`next-themes`** | Available via `components/theme-provider.tsx` and **`components/ui/sonner.tsx`** (toast theme); root layout does not wrap `ThemeProvider`, but the dependency is there for themed toasts. |
+| **`@vercel/analytics`** | `<Analytics />` in root layout for usage analytics on Vercel. |
+
+**Form / validation (available in stack):** **`react-hook-form`**, **`zod`**, **`@hookform/resolvers`** — useful for typed forms; not all screens may use them equally.
+
+**Other UI-related deps:** **`sonner`** (toasts), **`vaul`** (drawer), **`cmdk`** (command palette), **`embla-carousel-react`**, **`react-day-picker`** + **`date-fns`**, **`input-otp`**, **`react-resizable-panels`**, **`recharts`** (charts in `components/ui/chart.tsx`), **`@stripe/react-stripe-js`** / **`@stripe/stripe-js`** (present for Stripe.js usage if you wire Elements).
+
+---
+
+## 4. Backend and data layer (two parallel models)
+
+The project does **not** use one unified persistence path everywhere.
+
+**A) File-backed orders (primary path for kiosk API)**  
+- **`app/api/orders/route.ts`** and **`app/api/orders/[id]/route.ts`** read/write **`data/orders.json`** with Node **`fs`** (`promises`).  
+- Used by **`components/checkout.tsx`** (POST orders, GET/poll single order for cash flow) and **`app/checkout/success/page.tsx`** (loads order list and matches `order_id` — comment says “file-based API”).  
+- **`components/cashier-dashboard.tsx`** lists and PATCHes orders via the same API.
+
+**B) Supabase (Postgres) + SQL migration**  
+- **`@supabase/ssr`**: **`lib/supabase/server.ts`** (cookie-aware server client) and **`lib/supabase/client.ts`** (browser client). Env: **`NEXT_PUBLIC_SUPABASE_URL`**, **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**.  
+- **`scripts/001_create_orders_table.sql`**: defines **`orders`** with UUID `id`, JSONB `items`, money in integer cents, **`stripe_session_id`**, statuses, **RLS** policies for broad kiosk-style access.  
+- **`app/actions/stripe.ts`** inserts/updates/deletes rows in **`orders`** when creating a **Stripe Checkout** session and exposes **`getOrderStatus`**.
+
+So: **kiosk checkout → JSON file**; **Stripe server action → Supabase**. Those two stores are separate unless you integrate them.
+
+---
+
+## 5. Payments: Stripe
+
+| Piece | Role |
+|--------|------|
+| **`stripe` (server SDK)** | `lib/stripe.ts` exports `new Stripe(process.env.STRIPE_SECRET_KEY!)` with **`server-only`**. |
+| **`app/actions/stripe.ts`** | **`createCheckoutSession`**: server-side totals, **`supabase.from("orders").insert`**, then **`stripe.checkout.sessions.create`** (EUR line items + tax line), updates `stripe_session_id`, rollback delete on failure. **`getOrderStatus`** reads from Supabase. |
+
+**Important:** Grep shows **`createCheckoutSession` / `getOrderStatus` are not imported from other app files** — the **main `Checkout` UI** does **not** call Stripe; it **simulates** card delay and **`fetch("/api/orders")`**. Stripe is **implemented as infrastructure** but **not wired to the primary customer checkout path** in the current code.
+
+---
+
+## 6. Authentication, loyalty, and session
+
+**`context/auth-context.tsx`** implements a **client-only “auth” demo**:
+
+- Users stored in **`localStorage`** (`pizzapad_users`), passwords hashed with **Web Crypto SHA-256** + salt (comment notes this is not production bcrypt).  
+- Login, signup, guest mode, **points** (earn/redeem, 10 points ≈ 1 €).  
+
+No Supabase Auth or server session for customers in this file.
+
+---
+
+## 7. Domain and business logic
+
+**`lib/pizza-data.ts`** holds the **menu model**: sizes, crusts, sauces, cheese levels, toppings with **EUR** prices, and **`calculatePizzaPrice`**. This is the single source of truth for builder pricing.
+
+**`app/page.tsx`** uses a **hard-coded `SESSION`** (restaurant name, table number) with a comment that production would use **QR / URL params**.
+
+**`components/checkout.tsx`** includes a **from-scratch QR code encoder** (GF(256), Reed–Solomon, matrix placement) to show a **“Pay at Counter”** QR for cash orders — **no extra npm QR library**.
+
+---
+
+## 8. Tooling and quality
+
+| Tool | Notes |
+|------|--------|
+| **ESLint** | `npm run lint` / `"eslint ."` in `package.json` (config not opened here). |
+| **PostCSS** | Only Tailwind’s PostCSS plugin. |
+
+---
+
+## 9. Documentation in the repo
+
+**`README.md`** is **not** a typical tech README: it is **Bulgarian training material** about digital self-ordering (PizzaPad / SmartPizza), quiz questions, and a glossary — conceptual, not build instructions.
+
+**`components.json`** metadata mentions **`generator: 'v0.app'`** in layout metadata — suggests initial UI may come from **v0**-style generation.
+
+---
+
+## 10. Summary diagram (mental model)
+
+```mermaid
+flowchart TB
+  subgraph client [Browser]
+    Page[app/page.tsx flows]
+    Checkout[checkout.tsx]
+    Cashier[cashier-dashboard.tsx]
+    Auth[auth-context localStorage]
+  end
+  subgraph nextapi [Next.js API Routes]
+    OrdersAPI["/api/orders → orders.json"]
+  end
+  subgraph server [Server Actions]
+    StripeAction[stripe.ts createCheckoutSession]
+  end
+  subgraph external [External]
+    FS[data/orders.json]
+    SB[(Supabase Postgres)]
+    StripeAPI[Stripe API]
+    VA[Vercel Analytics]
+  end
+  Checkout --> OrdersAPI
+  Cashier --> OrdersAPI
+  OrdersAPI --> FS
+  StripeAction --> SB
+  StripeAction --> StripeAPI
+  Page --> Auth
+  layout --> VA
+```
+
+---
+
+**Bottom line:** The stack is a **modern Next.js + React + TypeScript** app with **Tailwind/shadcn/Radix**, **optional Vercel Analytics**, **Stripe + Supabase** prepared for hosted Checkout flows, and **file-based JSON** for the **live kiosk and cashier API**. **`@stripe/react-stripe-js`**, **recharts**, **react-hook-form/zod**, and **next-themes** are in the toolchain for richer UI and future wiring; **user accounts** today are **browser-local only**, not a real backend auth system.
